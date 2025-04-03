@@ -1,80 +1,65 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
-from ui.playfair import Ui_MainWindow  
+from ui.playfair import Ui_MainWindow  # Đảm bảo rằng bạn đã chuyển file .ui sang .py
 import requests
 
 class MyApp(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.ui = Ui_MainWindow()  
-        self.ui.setupUi(self)  
+        self.ui = Ui_MainWindow()  # Khởi tạo Ui_MainWindow
+        self.ui.setupUi(self)  # Thiết lập giao diện
 
-        self.ui.btn_encrypt.clicked.connect(self.call_api_encrypt)  
-        self.ui.btn_decrypt.clicked.connect(self.call_api_decrypt)  
+        # Sử dụng đúng tên các nút (theo tên trong file UI)
+        self.ui.btn_encrypt.clicked.connect(self.call_api_encrypt)  # Đảm bảo rằng nút có tên encrypt_button
+        self.ui.btn_decrypt.clicked.connect(self.call_api_decrypt)  # Đảm bảo rằng nút có tên decrypt_button
 
     def call_api_encrypt(self):
         url = "http://127.0.0.1:5000/api/playfair/encrypt"
         
-        plain_text = self.ui.txt_plain_text.toPlainText().strip()
-        key = self.ui.txt_key.toPlainText().strip()
-
-        if not plain_text:
-            QMessageBox.warning(self, "Error", "Plain text cannot be empty!")
-            return
-        if not key:
-            QMessageBox.warning(self, "Error", "Key cannot be empty!")
-            return
-
-        payload = {"plain_text": plain_text, "key": key}
+        payload = {
+            "plain_text": self.ui.txt_plain_text.toPlainText(),
+            "key": self.ui.txt_key.toPlainText()
+        }
 
         try:
             response = requests.post(url, json=payload)
             
             if response.status_code == 200:
                 data = response.json()
-                encrypted_message = data.get("encrypted_message", "")
-
-                if encrypted_message:
-                    self.ui.txt_cipher_text.setPlainText(encrypted_message)
-                    QMessageBox.information(self, "Success", "Encrypted Successfully")
-                else:
-                    QMessageBox.critical(self, "Error", "Invalid response from API!")
+                self.ui.txt_cipher_text.setPlainText(data["encrypted_text"])
+                
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Information)
+                msg.setText("Encrypted Successfully")
+                msg.exec_()
             else:
-                QMessageBox.critical(self, "Error", f"API error: {response.text}")
+                print("Error while calling API")
         except requests.exceptions.RequestException as e:
-            QMessageBox.critical(self, "Error", f"Request error: {str(e)}")
+            print(f"Error: {e}")
 
     def call_api_decrypt(self):
         url = "http://127.0.0.1:5000/api/playfair/decrypt"
         
-        cipher_text = self.ui.txt_cipher_text.toPlainText().strip()
-        key = self.ui.txt_key.toPlainText().strip()
-
-        if not cipher_text:
-            QMessageBox.warning(self, "Error", "Cipher text cannot be empty!")
-            return
-        if not key:
-            QMessageBox.warning(self, "Error", "Key cannot be empty!")
-            return
-
-        payload = {"cipher_text": cipher_text, "key": key}
+        payload = {
+            "cipher_text": self.ui.txt_cipher_text.toPlainText(),
+            "key": self.ui.txt_key.toPlainText()
+        }
 
         try:
             response = requests.post(url, json=payload)
             
             if response.status_code == 200:
                 data = response.json()
-                decrypted_message = data.get("decrypted_message", "")
-
-                if decrypted_message:
-                    self.ui.txt_plain_text.setPlainText(decrypted_message)
-                    QMessageBox.information(self, "Success", "Decrypted Successfully")
-                else:
-                    QMessageBox.critical(self, "Error", "Invalid response from API!")
+                self.ui.txt_plain_text.setPlainText(data["decrypted_message"])
+                
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Information)
+                msg.setText("Decrypted Successfully")
+                msg.exec_()
             else:
-                QMessageBox.critical(self, "Error", f"API error: {response.text}")
+                print("Error while calling API")
         except requests.exceptions.RequestException as e:
-            QMessageBox.critical(self, "Error", f"Request error: {str(e)}")
+                print(f"Error: {e}")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
